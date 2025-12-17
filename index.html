@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kredi Takip</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <!-- İlk Kurulum Ekranı -->
+    <div id="onboarding-screen" class="onboarding-screen">
+        <div class="onboarding-container">
+            <div class="onboarding-card">
+                <div class="onboarding-logo">💳</div>
+                <h1 class="onboarding-title">Finansal Özgürlüğe Hoş Geldin</h1>
+                <p class="onboarding-subtitle">Güvenli ve kişisel finans takibine başlayalım</p>
+                
+                <form id="setupForm" onsubmit="handleSetup(event)">
+                    <div class="onboarding-input-group">
+                        <label>Adınız Soyadınız</label>
+                        <input type="text" id="setupName" placeholder="Örn: Ahmet Yılmaz" required minlength="2">
+                    </div>
+                    
+                    <div class="onboarding-input-group">
+                        <label>4 Haneli PIN Belirleyin</label>
+                        <input type="password" id="setupPin" placeholder="••••" required pattern="[0-9]{4}" maxlength="4" inputmode="numeric">
+                        <small class="input-hint">Sadece rakam kullanın (0-9)</small>
+                    </div>
+                    
+                    <button type="submit" class="onboarding-btn">Uygulamayı Başlat</button>
+                </form>
+                
+                <p class="onboarding-footer">Versiyon 1.0.0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN Kilit Ekranı -->
+    <div id="pin-lock-screen" class="pin-lock-screen">
+        <div class="pin-lock-container">
+            <div class="pin-lock-card">
+                <div class="pin-lock-logo">🔒</div>
+                <h1 class="pin-lock-title">Tekrar Hoş Geldin, <span id="welcomeUserName">Kullanıcı</span>!</h1>
+                <p class="pin-lock-subtitle">Devam etmek için PIN'inizi girin</p>
+                
+                <!-- PIN Göstergesi -->
+                <div class="pin-indicators">
+                    <div class="pin-dot" id="pinDot1"></div>
+                    <div class="pin-dot" id="pinDot2"></div>
+                    <div class="pin-dot" id="pinDot3"></div>
+                    <div class="pin-dot" id="pinDot4"></div>
+                </div>
+                
+                <!-- Sanal NumPad -->
+                <div class="numpad">
+                    <button class="numpad-btn" data-digit="1">1</button>
+                    <button class="numpad-btn" data-digit="2">2</button>
+                    <button class="numpad-btn" data-digit="3">3</button>
+                    <button class="numpad-btn" data-digit="4">4</button>
+                    <button class="numpad-btn" data-digit="5">5</button>
+                    <button class="numpad-btn" data-digit="6">6</button>
+                    <button class="numpad-btn" data-digit="7">7</button>
+                    <button class="numpad-btn" data-digit="8">8</button>
+                    <button class="numpad-btn" data-digit="9">9</button>
+                    <button class="numpad-btn numpad-btn-empty"></button>
+                    <button class="numpad-btn" data-digit="0">0</button>
+                    <button class="numpad-btn numpad-btn-clear" data-action="clear">⌫</button>
+                </div>
+                
+                <div class="pin-error-message" id="pinErrorMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ana Uygulama -->
+    <div id="app" style="display: none;">
+        <!-- Ana Sayfa -->
+        <div id="anaSayfa" class="screen active">
+            <div class="header">
+                <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
+                <h1>Ana Sayfa</h1>
+                <button class="notification-btn">🔔</button>
+            </div>
+
+            <div class="content">
+                <h2 class="greeting">Merhaba, Kullanıcı!</h2>
+
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <div class="summary-title">
+                            <p class="summary-label">Bu Ayki Durum</p>
+                        </div>
+                        <button class="privacy-toggle" onclick="togglePrivacyMode()" id="privacyToggle">
+                            <span class="privacy-icon">👁️</span>
+                        </button>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-text">
+                            <h1 class="summary-amount" id="kalanOdeme">₺3,125.00</h1>
+                            <p class="summary-sub-text">Kalan Ödeme Tutarı</p>
+                            <p class="summary-total">Toplam Dönem Borcu: <span id="toplamDonemBorcu">₺4,325.50</span></p>
+                        </div>
+                        <div class="summary-progress">
+                            <svg class="circular-progress" viewBox="0 0 100 100">
+                                <circle class="progress-bg" cx="50" cy="50" r="40"></circle>
+                                <circle class="progress-fill" cx="50" cy="50" r="40" id="progressCircle"></circle>
+                            </svg>
+                            <div class="progress-text" id="progressText">40%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">Yaklaşan Ödemeler</h3>
+                
+                <div class="filter-chips">
+                    <button class="chip active" onclick="filterOdemeler('Tümü')">Tümü</button>
+                    <button class="chip" onclick="filterOdemeler('Kredi Kartı')">Kredi Kartları</button>
+                    <button class="chip" onclick="filterOdemeler('Kredi')">Krediler</button>
+                    <button class="chip" onclick="filterOdemeler('Tamamlananlar')">Tamamlananlar</button>
+                </div>
+                
+                <div id="kartListesi"></div>
+            </div>
+
+            <button class="fab" onclick="toggleFabMenu()">+</button>
+            
+            <div id="fabMenu" class="fab-menu">
+                <div class="fab-menu-item" onclick="yeniKartAc('Kredi Kartı')">
+                    <span class="fab-menu-icon">💳</span>
+                    <span class="fab-menu-text">Kredi Kartı Ekle</span>
+                </div>
+                <div class="fab-menu-item" onclick="yeniKartAc('Kredi')">
+                    <span class="fab-menu-icon">💰</span>
+                    <span class="fab-menu-text">Kredi Ekle</span>
+                </div>
+            </div>
+            <div id="fabOverlay" class="fab-overlay" onclick="toggleFabMenu()"></div>
+
+            <div class="bottom-nav">
+                <div class="nav-item active" onclick="showScreen('anaSayfa')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Ana Sayfa</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('gecmis')">
+                    <span class="nav-icon">🕐</span>
+                    <span class="nav-label">Geçmiş</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('analiz')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Analiz</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('ayarlar')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Ayarlar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yeni Kredi Kartı Ekle -->
+        <div id="yeniKrediKarti" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Yeni Kredi Kartı Ekle</h1>
+                <div></div>
+            </div>
+
+            <div class="content">
+
+                <div class="input-group">
+                    <label>Banka Adı</label>
+                    <input type="text" id="bankaAdi1" placeholder="Banka seçin veya yazın">
+                </div>
+
+                <div class="input-group">
+                    <label>Kart Rumuzu (Opsiyonel)</label>
+                    <input type="text" id="kartAdi1" placeholder="Örn: Maaş Kartım">
+                </div>
+
+                <div class="input-group">
+                    <label>Toplam Limit</label>
+                    <input type="text" id="toplamLimit1" placeholder="₺0,00" oninput="formatCurrency(this); hesaplaAsgariOdeme1()">
+                    <small style="color: var(--text-tertiary); font-size: 12px; margin-top: 4px; display: block;">
+                        Limit > 50.000 TL ise asgari %40, değilse %20
+                    </small>
+                </div>
+
+                <div class="input-group">
+                    <label>Güncel Borç</label>
+                    <input type="text" id="guncelBorc1" placeholder="₺0,00" oninput="formatCurrency(this); hesaplaAsgariOdeme1()">
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Hesap Kesim Tarihi</label>
+                        <select id="hesapKesimTarihi1" class="select-input" onchange="hesaplaSonOdemeGunu1()">
+                            <option value="">Seçiniz</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Son Ödeme Günü (Otomatik)</label>
+                        <input type="number" id="sonOdemeGunu1" class="readonly-input" readonly>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Asgari Ödeme (Düzenlenebilir)</label>
+                    <input type="text" id="asgariOdeme1" placeholder="₺0,00" oninput="formatCurrency(this)">
+                </div>
+
+                <button class="save-btn" onclick="krediKartiKaydet()">Kaydet</button>
+            </div>
+        </div>
+
+        <!-- Yeni Kredi Ekle -->
+        <div id="yeniKredi" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Yeni Kredi Ekle</h1>
+                <div></div>
+            </div>
+
+            <div class="content">
+                <div class="input-group">
+                    <label>Banka Adı</label>
+                    <input type="text" id="bankaAdi2" placeholder="Banka seçin veya yazın">
+                </div>
+
+                <div class="input-group">
+                    <label>Kredi Rumuzu (Opsiyonel)</label>
+                    <input type="text" id="kartAdi2" placeholder="Örn: Konut Kredisi">
+                </div>
+
+                <div class="input-group">
+                    <label>Kalan Taksit Sayısı</label>
+                    <input type="number" id="kalanTaksit2" placeholder="Örn: 24" oninput="hesaplaKrediDetay()">
+                </div>
+
+                <div class="input-group">
+                    <label>Aylık Taksit Tutarı</label>
+                    <input type="text" id="aylikTaksit2" placeholder="₺0,00" oninput="formatCurrency(this); hesaplaKrediDetay()">
+                </div>
+
+                <div class="input-group">
+                    <label>Toplam Kalan Borç (Otomatik Hesaplanır)</label>
+                    <input type="text" id="guncelBorc2" placeholder="₺0,00" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label>Taksit Ödeme Günü</label>
+                    <select id="sonOdemeGunu2" class="select-input">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                    </select>
+                </div>
+
+                <div id="krediBitisInfo" class="kredi-info-note"></div>
+
+                <button class="save-btn" onclick="krediKaydet()">Kaydet</button>
+            </div>
+        </div>
+
+        <!-- Ödeme Detay -->
+        <div id="odemeDetay" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Ödeme Detayı</h1>
+                <button class="menu-dots" onclick="toggleDetailMenu()">⋮</button>
+            </div>
+            <div id="detailMenu" class="detail-menu">
+                <div class="detail-menu-item" onclick="kartDuzenle()">
+                    <span class="detail-menu-icon">✏️</span>
+                    <span class="detail-menu-text">Düzenle</span>
+                </div>
+                <div class="detail-menu-item" onclick="kartSil()">
+                    <span class="detail-menu-icon">🗑️</span>
+                    <span class="detail-menu-text">Kartı Sil</span>
+                </div>
+            </div>
+            <div id="detailMenuOverlay" class="detail-menu-overlay" onclick="toggleDetailMenu()"></div>
+            <div class="content" id="detayContent"></div>
+        </div>
+        
+        <!-- Düzenleme Modalı -->
+        <div id="editModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <div class="edit-modal-header">
+                    <h2>Bilgileri Düzenle</h2>
+                    <button class="edit-modal-close" onclick="closeEditModal()">×</button>
+                </div>
+                
+                <div class="edit-modal-body">
+                    <div class="input-group">
+                        <label>Kart/Kredi Adı</label>
+                        <input type="text" id="editKartAdi" placeholder="Örn: Maaş Kartım">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Güncel Borç</label>
+                        <input type="text" id="editGuncelBorc" placeholder="₺0,00" oninput="formatCurrency(this)">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Asgari Tutar</label>
+                        <input type="text" id="editAsgariTutar" placeholder="₺0,00" oninput="formatCurrency(this)">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Son Ödeme Tarihi</label>
+                        <input type="date" id="editSonOdemeTarihi">
+                    </div>
+                </div>
+                
+                <div class="edit-modal-footer">
+                    <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeEditModal()">İptal</button>
+                    <button class="edit-modal-btn edit-modal-btn-save" onclick="kaydetDuzenle()">Değişiklikleri Kaydet</button>
+                </div>
+            </div>
+        </div>
+        <div id="editModalOverlay" class="edit-modal-overlay" onclick="closeEditModal()"></div>
+        
+        <!-- Ödeme Modalı -->
+        <div id="paymentModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <div class="edit-modal-header">
+                    <h2>Ödeme Tutarı Girin</h2>
+                    <button class="edit-modal-close" onclick="closePaymentModal()">×</button>
+                </div>
+                
+                <div class="edit-modal-body">
+                    <!-- Hızlı Seçim Butonları -->
+                    <div class="payment-quick-select">
+                        <button class="payment-chip active" onclick="selectPaymentAmount('full')">Borcun Tamamı</button>
+                        <button class="payment-chip" onclick="selectPaymentAmount('minimum')">Asgari Tutar</button>
+                        <button class="payment-chip" onclick="selectPaymentAmount('custom')">Farklı Tutar</button>
+                    </div>
+                    
+                    <!-- Tutar Girişi -->
+                    <div class="input-group">
+                        <label>Ödeme Tutarı</label>
+                        <input type="text" id="paymentAmount" placeholder="₺0,00" oninput="formatCurrency(this)">
+                    </div>
+                    
+                    <!-- Bilgi Kartı -->
+                    <div class="payment-info-card">
+                        <div class="payment-info-row">
+                            <span>Toplam Borç:</span>
+                            <span id="paymentTotalDebt">₺0,00</span>
+                        </div>
+                        <div class="payment-info-row">
+                            <span>Asgari Tutar:</span>
+                            <span id="paymentMinAmount">₺0,00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="edit-modal-footer">
+                    <button class="edit-modal-btn edit-modal-btn-cancel" id="cancelPaymentBtn">İptal</button>
+                    <button class="edit-modal-btn edit-modal-btn-save" id="savePaymentBtn">Ödemeyi Kaydet</button>
+                </div>
+            </div>
+        </div>
+        <div id="paymentModalOverlay" class="edit-modal-overlay" onclick="closePaymentModal()"></div>
+
+        <!-- Ödeme Geçmişi Düzenleme Modalı -->
+        <div id="historyEditModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <div class="edit-modal-header">
+                    <h2>Ödemeyi Düzenle</h2>
+                    <button class="edit-modal-close" onclick="closeHistoryEditModal()">×</button>
+                </div>
+                
+                <div class="edit-modal-body">
+                    <div class="input-group">
+                        <label>Ödeme Tutarı</label>
+                        <input type="text" id="historyEditAmount" placeholder="₺0,00" oninput="formatCurrency(this)">
+                    </div>
+                    <div class="info-card" style="margin-top: 16px;">
+                        <div class="info-card-text">
+                            <strong>Not:</strong> Tutarı değiştirdiğinizde, fark kartın güncel borcuna yansıtılacaktır.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="edit-modal-footer">
+                    <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeHistoryEditModal()">İptal</button>
+                    <button class="edit-modal-btn edit-modal-btn-save" onclick="saveHistoryEdit()">Kaydet</button>
+                </div>
+            </div>
+        </div>
+        <div id="historyEditModalOverlay" class="edit-modal-overlay" onclick="closeHistoryEditModal()"></div>
+
+        <!-- Kredi Kartlarım -->
+        <div id="krediKartlari" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Kredi Kartlarım</h1>
+                <div></div>
+            </div>
+            <div class="content" id="krediKartlariContent"></div>
+        </div>
+
+        <!-- Kredilerim -->
+        <div id="krediler" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Kredilerim</h1>
+                <div></div>
+            </div>
+            <div class="content" id="kredilerContent"></div>
+        </div>
+
+        <!-- Geçmiş -->
+        <div id="gecmis" class="screen">
+            <div class="header">
+                <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
+                <h1>Geçmiş</h1>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <!-- Tarih Seçici -->
+                <div class="date-selector">
+                    <button class="date-arrow" onclick="changeMonth(-1)">‹</button>
+                    <div class="date-display" onclick="openMonthPicker()">
+                        <span id="selectedMonth">Aralık 2024</span>
+                    </div>
+                    <button class="date-arrow" onclick="changeMonth(1)">›</button>
+                </div>
+                
+                <!-- Aylık Özet Kartı -->
+                <div class="monthly-summary-card">
+                    <div class="monthly-summary-content">
+                        <div class="monthly-summary-text">
+                            <p class="monthly-summary-label">Bu Ay Yapılan Ödemeler</p>
+                            <h1 class="monthly-summary-amount" id="aylikToplamOdeme">₺0,00</h1>
+                            <p class="monthly-summary-count" id="aylikOdemeSayisi">0 ödeme tamamlandı</p>
+                        </div>
+                        <div class="monthly-summary-icon">
+                            <svg width="80" height="80" viewBox="0 0 80 80">
+                                <circle cx="40" cy="40" r="35" fill="rgba(0, 255, 136, 0.1)" stroke="var(--accent-color)" stroke-width="2"/>
+                                <path d="M25 40 L35 50 L55 30" stroke="var(--accent-color)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Geçmiş İşlem Listesi -->
+                <h3 class="section-title">Ödeme Geçmişi</h3>
+                <div id="gecmisListesi"></div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('anaSayfa')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Ana Sayfa</span>
+                </div>
+                <div class="nav-item active">
+                    <span class="nav-icon">🕐</span>
+                    <span class="nav-label">Geçmiş</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('analiz')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Analiz</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('ayarlar')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Ayarlar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analiz -->
+        <div id="analiz" class="screen">
+            <div class="header">
+                <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
+                <h1>Analiz</h1>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <!-- Üst Özet Kartlar -->
+                <div class="analytics-grid">
+                    <div class="analytics-summary-card">
+                        <p class="analytics-label">Toplam Borç</p>
+                        <h2 class="analytics-value" id="analizToplamBorc">₺0,00</h2>
+                        <div class="analytics-change">
+                            <span class="change-icon">↑</span>
+                            <span class="change-text" id="borcDegisim">%5 Artış</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-summary-card">
+                        <p class="analytics-label">Kullanılabilir Limit</p>
+                        <h2 class="analytics-value analytics-value-positive" id="analizKullLimit">₺0,00</h2>
+                        <div class="analytics-change analytics-change-positive">
+                            <span class="change-icon">✓</span>
+                            <span class="change-text">Mevcut</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Borç Dağılımı (Donut Chart) -->
+                <div class="analytics-chart-card">
+                    <h3 class="analytics-chart-title">Borç Dağılımı</h3>
+                    <div class="donut-chart-container">
+                        <div class="donut-chart" id="donutChart">
+                            <div class="donut-center">
+                                <span class="donut-label">Dağılım</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #ff9800;"></span>
+                            <span class="legend-text">Kredi Kartları</span>
+                            <span class="legend-value" id="krediKartiYuzde">60%</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #2196f3;"></span>
+                            <span class="legend-text">Krediler</span>
+                            <span class="legend-value" id="krediYuzde">40%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Son 6 Ay Ödemeleri (Bar Chart) -->
+                <div class="analytics-chart-card">
+                    <h3 class="analytics-chart-title">Son 6 Ay Ödemeleri</h3>
+                    <div class="bar-chart">
+                        <div class="bar-item">
+                            <div class="bar" style="height: 50%"></div>
+                            <span class="bar-label">Tem</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: 70%"></div>
+                            <span class="bar-label">Ağu</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: 45%"></div>
+                            <span class="bar-label">Eyl</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: 85%"></div>
+                            <span class="bar-label">Eki</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar" style="height: 60%"></div>
+                            <span class="bar-label">Kas</span>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar bar-active" style="height: 90%"></div>
+                            <span class="bar-label">Ara</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Borç Liderleri -->
+                <div class="analytics-list-card">
+                    <h3 class="analytics-chart-title">Borç Liderleri</h3>
+                    <div id="borcLiderleri"></div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('anaSayfa')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Ana Sayfa</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('gecmis')">
+                    <span class="nav-icon">🕐</span>
+                    <span class="nav-label">Geçmiş</span>
+                </div>
+                <div class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Analiz</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('ayarlar')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Ayarlar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Güvenlik -->
+        <div id="guvenlik" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('ayarlar')">←</button>
+                <h1>Güvenlik Ayarları</h1>
+                <div></div>
+            </div>
+            <div class="content">
+                <h3 class="section-title">Şifre İşlemleri</h3>
+                <form id="passwordForm" onsubmit="updatePassword(event)">
+                    <div class="input-group">
+                        <label>Mevcut Şifre</label>
+                        <input type="password" id="currentPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Yeni Şifre</label>
+                        <input type="password" id="newPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Yeni Şifre Tekrar</label>
+                        <input type="password" id="confirmPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="save-btn">Şifreyi Güncelle</button>
+                </form>
+
+                <h3 class="section-title">Ekstra Güvenlik</h3>
+                <div class="settings-item" onclick="toggleAppLock(event)">
+                    <span class="settings-icon">🔐</span>
+                    <span class="settings-text">Uygulama Kilidi (PIN)</span>
+                    <div class="toggle-switch" id="appLockToggle">
+                        <div class="toggle-switch-handle"></div>
+                    </div>
+                </div>
+
+                <div class="settings-item" onclick="toggleBalanceBlur(event)">
+                    <span class="settings-icon">👁️</span>
+                    <span class="settings-text">Bakiyeleri Başlangıçta Gizle</span>
+                    <div class="toggle-switch" id="balanceBlurToggle">
+                        <div class="toggle-switch-handle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profil Düzenleme -->
+        <div id="profilDuzenle" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('ayarlar')">←</button>
+                <h1>Profil Bilgileri</h1>
+                <div></div>
+            </div>
+            <div class="content">
+                <div class="profile-edit-avatar">
+                    <div class="profile-edit-avatar-circle" id="profileAvatarCircle">
+                        <span id="profileAvatarText">A</span>
+                        <img id="profileAvatarImg" style="display: none;">
+                    </div>
+                    <label for="avatarUpload" class="profile-edit-camera">
+                        <input type="file" id="avatarUpload" accept="image/*" onchange="handleAvatarUpload(event)" style="display: none;">
+                        📷
+                    </label>
+                </div>
+
+                <form id="profileForm" onsubmit="saveProfile(event)">
+                    <div class="input-group">
+                        <label>Ad Soyad</label>
+                        <input type="text" id="profileName" placeholder="Örn: Ahmet Yılmaz" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>E-posta</label>
+                        <input type="email" id="profileEmail" placeholder="ornek@email.com" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Telefon</label>
+                        <input type="tel" id="profilePhone" placeholder="0555 123 45 67">
+                    </div>
+
+                    <button type="submit" class="save-btn">Değişiklikleri Kaydet</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Ayarlar -->
+        <div id="ayarlar" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('anaSayfa')">←</button>
+                <h1>Ayarlar</h1>
+                <div></div>
+            </div>
+            <div class="content" id="ayarlarContent"></div>
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('anaSayfa')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Ana Sayfa</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('gecmis')">
+                    <span class="nav-icon">🕐</span>
+                    <span class="nav-label">Geçmiş</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('analiz')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Analiz</span>
+                </div>
+                <div class="nav-item active">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Ayarlar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yan Menü -->
+        <div id="sideMenu" class="side-menu">
+            <div class="side-menu-header">
+                <div class="profile-section">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-info">
+                        <div class="profile-name">Kullanıcı</div>
+                        <div class="profile-subtitle">Hoş geldiniz</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-menu-content">
+                <div class="side-menu-item" onclick="closeSideMenu(); showKrediKartlari();">
+                    <span class="side-menu-icon">💳</span>
+                    <span class="side-menu-text">Kredi Kartlarım</span>
+                </div>
+
+                <div class="side-menu-item" onclick="closeSideMenu(); showKrediler();">
+                    <span class="side-menu-icon">💰</span>
+                    <span class="side-menu-text">Kredilerim</span>
+                </div>
+
+                <div class="side-menu-item">
+                    <span class="side-menu-icon">🔔</span>
+                    <span class="side-menu-text">Bildirimler</span>
+                </div>
+
+                <div class="side-menu-item" onclick="closeSideMenu(); showAyarlar();">
+                    <span class="side-menu-icon">⚙️</span>
+                    <span class="side-menu-text">Ayarlar</span>
+                </div>
+
+                <div class="side-menu-item">
+                    <span class="side-menu-icon">❓</span>
+                    <span class="side-menu-text">Yardım ve Destek</span>
+                </div>
+            </div>
+
+            <div class="side-menu-footer">
+                <div class="side-menu-item">
+                    <span class="side-menu-icon">🚪</span>
+                    <span class="side-menu-text">Çıkış Yap</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="sideMenuOverlay" class="side-menu-overlay" onclick="toggleSideMenu()"></div>
+
+        <!-- Bottom Sheet -->
+        <div id="bottomSheet" class="bottom-sheet">
+            <div class="bottom-sheet-header">
+                <div class="bottom-sheet-handle"></div>
+                <h3 id="bottomSheetTitle" class="bottom-sheet-title"></h3>
+            </div>
+            <div id="bottomSheetContent" class="bottom-sheet-content"></div>
+        </div>
+        <div id="bottomSheetOverlay" class="bottom-sheet-overlay" onclick="closeBottomSheet()"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <h3 id="modalTitle" class="modal-title"></h3>
+                <p id="modalText" class="modal-text"></p>
+                <div id="modalButtons" class="modal-buttons"></div>
+            </div>
+        </div>
+        <div id="modalOverlay" class="modal-overlay" onclick="closeModal()"></div>
+    </div>
+
+    <!-- Ödeme Seçimi Modalı -->
+    <div id="payment-choice-modal" class="payment-choice-modal">
+        <div class="payment-choice-overlay" onclick="closePaymentChoiceModal()"></div>
+        <div class="payment-choice-content">
+            <div class="payment-choice-header">
+                <h2>Ödeme Seçimi</h2>
+                <p class="payment-choice-subtitle">Ne kadar ödeme yaptınız?</p>
+            </div>
+            
+            <div class="payment-choice-body">
+                <div class="payment-choice-info" id="paymentChoiceInfo">
+                    <div class="payment-info-row">
+                        <span>Toplam Borç:</span>
+                        <span id="choiceTotalDebt">₺0,00</span>
+                    </div>
+                    <div class="payment-info-row">
+                        <span>Asgari Tutar:</span>
+                        <span id="choiceMinAmount">₺0,00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="payment-choice-buttons" id="paymentChoiceButtons">
+                <button class="payment-choice-btn btn-full" onclick="selectPaymentChoice('full')">
+                    <span class="btn-icon">💰</span>
+                    <span class="btn-text">Borcun Tamamını Öde</span>
+                </button>
+                <button class="payment-choice-btn btn-min" onclick="selectPaymentChoice('minimum')">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-text">Asgari Tutarı Öde</span>
+                </button>
+                <button class="payment-choice-btn btn-custom" onclick="showCustomAmountInput()">
+                    <span class="btn-icon">✏️</span>
+                    <span class="btn-text">Farklı Tutar Gir</span>
+                </button>
+                <button class="payment-choice-btn btn-cancel" onclick="closePaymentChoiceModal()">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Vazgeç</span>
+                </button>
+            </div>
+            
+            <!-- Manuel Tutar Girişi -->
+            <div class="custom-amount-section" id="customAmountSection" style="display: none;">
+                <div class="custom-amount-input">
+                    <label>Ödeme Tutarı</label>
+                    <input type="text" id="customAmountInput" placeholder="₺0,00" oninput="formatCurrency(this)">
+                </div>
+                <div class="custom-amount-buttons">
+                    <button class="payment-choice-btn btn-confirm" onclick="confirmCustomAmount()">
+                        <span class="btn-icon">✅</span>
+                        <span class="btn-text">Onayla</span>
+                    </button>
+                    <button class="payment-choice-btn btn-back" onclick="hideCustomAmountInput()">
+                        <span class="btn-icon">↩️</span>
+                        <span class="btn-text">Geri</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kredi Taksit Ödeme Modalı -->
+    <div id="loan-payment-modal" class="payment-choice-modal">
+        <div class="payment-choice-overlay" onclick="closeLoanPaymentModal()"></div>
+        <div class="payment-choice-content">
+            <div class="payment-choice-header">
+                <h2>Taksit Ödeme</h2>
+                <p class="payment-choice-subtitle">Bu ay kaç taksit ödeyeceksiniz?</p>
+            </div>
+            
+            <div class="payment-choice-body">
+                <div class="loan-payment-input">
+                    <label for="installmentCount">Taksit Sayısı:</label>
+                    <input type="number" id="installmentCount" value="1" min="1" oninput="updateLoanPaymentTotal()">
+                </div>
+                
+                <div class="payment-choice-info">
+                    <div class="payment-info-row">
+                        <span>Aylık Taksit:</span>
+                        <span id="loanMonthlyAmount">₺0,00</span>
+                    </div>
+                    <div class="payment-info-row">
+                        <span>Kalan Taksit:</span>
+                        <span id="loanRemainingCount">0</span>
+                    </div>
+                    <div class="payment-info-row payment-total-row">
+                        <span>Toplam Ödenecek:</span>
+                        <span id="loanTotalPayment">₺0,00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="payment-choice-buttons">
+                <button class="payment-choice-btn btn-full" onclick="confirmLoanPayment()">
+                    <span class="btn-icon">💰</span>
+                    <span class="btn-text">Ödemeyi Onayla</span>
+                </button>
+                <button class="payment-choice-btn btn-cancel" onclick="closeLoanPaymentModal()">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-text">Vazgeç</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <style>
+        body { background: #0a2f1f; color: white; padding: 20px; }
+        .fab { 
+            width: 60px; 
+            height: 60px; 
+            background: #00ff88; 
+            border-radius: 30px;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+        }
+        .menu {
+            display: none;
+            background: #1a4d3a;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .menu.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Sayfası</h1>
+    <button class="fab" onclick="toggleMenu()">+</button>
+    <div id="menu" class="menu">
+        <div onclick="alert('Kredi Kartı Ekle')">💳 Kredi Kartı Ekle</div>
+        <div onclick="alert('Kredi Ekle')">💰 Kredi Ekle</div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            console.log('Toggle clicked!');
+            document.getElementById('menu').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
