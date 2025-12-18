@@ -503,8 +503,11 @@ function migrateOldDates() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Pull-to-refresh'i engelle
+    // Pull-to-refresh'i engelle - EN ÖNCELİKLİ
     disablePullToRefresh();
+    
+    // Ekstra güvenlik katmanı
+    preventAllRefresh();
     
     // Veri temizleme: Eski tarihleri dönüştür
     migrateOldDates();
@@ -533,49 +536,91 @@ document.addEventListener('DOMContentLoaded', () => {
 function disablePullToRefresh() {
     let startY = 0;
     let startScrollTop = 0;
+    let isScrolling = false;
     
-    // Touch başlangıcını yakala
+    // Tüm scroll container'ları bul
+    const scrollContainers = [document.body, document.documentElement, document.getElementById('app')];
+    
+    // Her scroll container için overscroll'u engelle
+    scrollContainers.forEach(container => {
+        if (container) {
+            container.style.overscrollBehavior = 'none';
+            container.style.overscrollBehaviorY = 'none';
+            container.style.webkitOverscrollBehavior = 'none';
+            container.style.webkitOverscrollBehaviorY = 'none';
+        }
+    });
+    
+    // Touch başlangıcını yakala - TÜM elementlerde
     document.addEventListener('touchstart', function(e) {
         startY = e.touches[0].clientY;
-        startScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    }, { passive: false });
+        startScrollTop = getScrollTop();
+        isScrolling = false;
+    }, { passive: false, capture: true });
     
-    // Touch hareketi sırasında kontrol et
+    // Touch hareketi sırasında kontrol et - ULTRA AGRESİF
     document.addEventListener('touchmove', function(e) {
         const currentY = e.touches[0].clientY;
-        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const currentScrollTop = getScrollTop();
+        const deltaY = currentY - startY;
         
         // Eğer sayfa en tepedeyse ve aşağı çekiliyorsa MUTLAKA engelle
-        if (currentScrollTop <= 0 && currentY > startY) {
+        if (currentScrollTop <= 1 && deltaY > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+        
+        // Negatif scroll'u anında düzelt
+        if (currentScrollTop < 0) {
+            resetScroll();
             e.preventDefault();
             e.stopPropagation();
             return false;
         }
         
-        // Negatif scroll'u engelle
-        if (currentScrollTop < 0) {
-            window.scrollTo(0, 0);
+        // Aşırı yukarı çekmeyi engelle
+        if (deltaY > 50 && currentScrollTop <= 5) {
             e.preventDefault();
+            e.stopPropagation();
             return false;
         }
-    }, { passive: false });
+        
+        isScrolling = true;
+    }, { passive: false, capture: true });
     
-    // Scroll olayını kontrol et
-    document.addEventListener('scroll', function(e) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    // Touch bitişinde kontrol
+    document.addEventListener('touchend', function(e) {
+        if (getScrollTop() < 0) {
+            resetScroll();
+        }
+        isScrolling = false;
+    }, { passive: false, capture: true });
+    
+    // Scroll olayını sürekli kontrol et
+    const scrollHandler = function(e) {
+        const scrollTop = getScrollTop();
         if (scrollTop < 0) {
-            window.scrollTo(0, 0);
+            resetScroll();
             e.preventDefault();
+            e.stopPropagation();
             return false;
         }
-    }, { passive: false });
+    };
     
-    // Window'un scroll'unu kontrol et
-    window.addEventListener('scroll', function(e) {
-        if (window.pageYOffset < 0) {
-            window.scrollTo(0, 0);
+    document.addEventListener('scroll', scrollHandler, { passive: false, capture: true });
+    window.addEventListener('scroll', scrollHandler, { passive: false, capture: true });
+    
+    // Wheel olaylarını da kontrol et (desktop için)
+    document.addEventListener('wheel', function(e) {
+        const scrollTop = getScrollTop();
+        if (scrollTop <= 0 && e.deltaY < 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
         }
-    }, { passive: false });
+    }, { passive: false, capture: true });
     
     // Tüm refresh olaylarını engelle
     window.addEventListener('beforeunload', function(e) {
@@ -591,6 +636,131 @@ function disablePullToRefresh() {
             return false;
         }
     });
+    
+    // Yardımcı fonksiyonlar
+    function getScrollTop() {
+        return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+    
+    function resetScroll() {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
+    
+    // Sürekli kontrol - her 100ms'de bir
+    setInterval(() => {
+        if (getScrollTop() < 0) {
+            resetScroll();
+        }
+    }, 100);
+    
+    // Viewport meta tag'ini güncelle
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content');
+    }
+    
+    console.log('Pull-to-refresh engelleme sistemi aktif');
+}
+
+// Ekstra güvenlik katmanı - TÜM refresh türlerini engelle
+function preventAllRefresh() {
+    // Tüm touch eventlerini yakala ve kontrol et
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    
+    // Document seviyesinde tüm touch eventlerini yakala
+    document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        
+        // Eğer sayfa en tepedeyse ve aşağı çekilmeye başlanıyorsa hazırlan
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        if (scrollTop <= 0) {
+            // Potansiyel pull-to-refresh hareketi
+            console.log('Potansiyel pull-to-refresh algılandı');
+        }
+    }, { passive: false, capture: true });
+    
+    document.addEventListener('touchmove', function(e) {
+        const touchCurrentY = e.touches[0].clientY;
+        const touchDelta = touchCurrentY - touchStartY;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+        
+        // Eğer sayfa tepedeyse ve aşağı çekiliyorsa MUTLAKA engelle
+        if (scrollTop <= 0 && touchDelta > 0) {
+            console.log('Pull-to-refresh engellendi!');
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+        
+        // Çok hızlı aşağı çekme hareketlerini engelle
+        const touchTime = Date.now() - touchStartTime;
+        if (touchDelta > 100 && touchTime < 300 && scrollTop <= 5) {
+            console.log('Hızlı pull-to-refresh engellendi!');
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    }, { passive: false, capture: true });
+    
+    // Sayfa yenileme gestürlerini engelle
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+        return false;
+    }, { passive: false });
+    
+    document.addEventListener('gesturechange', function(e) {
+        e.preventDefault();
+        return false;
+    }, { passive: false });
+    
+    document.addEventListener('gestureend', function(e) {
+        e.preventDefault();
+        return false;
+    }, { passive: false });
+    
+    // Tüm context menu'leri engelle (uzun basma)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    }, { passive: false });
+    
+    // Tüm drag eventlerini engelle
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    }, { passive: false });
+    
+    // Sayfa görünürlük değişikliklerini yakala
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            console.log('Sayfa gizlendi');
+        } else {
+            console.log('Sayfa tekrar görünür');
+            // Scroll pozisyonunu sıfırla
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 100);
+        }
+    });
+    
+    // Sayfa focus/blur eventlerini yakala
+    window.addEventListener('focus', function() {
+        console.log('Sayfa focus aldı');
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+        }, 100);
+    });
+    
+    window.addEventListener('blur', function() {
+        console.log('Sayfa focus kaybetti');
+    });
+    
+    console.log('Ekstra güvenlik katmanı aktif');
 }
 
 // GEÇİCİ: Onboarding'i atla
