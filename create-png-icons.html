@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PNG Icon Creator</title>
+</head>
+<body>
+    <h2>PNG İkon Oluşturucu</h2>
+    <canvas id="canvas192" width="192" height="192" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    <br>
+    <button onclick="downloadIcon(192)">192x192 PNG İndir</button>
+    <button onclick="downloadIcon(512)">512x512 PNG İndir</button>
+
+    <script>
+        function createIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Arka plan
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Köşe yuvarlatma için clip path
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.125);
+            ctx.clip();
+            
+            // Gradient oluştur
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#00ff88');
+            gradient.addColorStop(1, '#00e676');
+            
+            // Gölge efekti
+            const shadowOffset = size * 0.02;
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.3)';
+            ctx.fillRect(size * 0.27 + shadowOffset, size * 0.375 + shadowOffset, size * 0.46, size * 0.29);
+            
+            // Ana kredi kartı
+            ctx.fillStyle = gradient;
+            ctx.fillRect(size * 0.25, size * 0.354, size * 0.46, size * 0.29);
+            
+            // Kart detayları
+            const scale = size / 192;
+            
+            // Chip
+            ctx.fillStyle = 'rgba(26, 26, 26, 0.8)';
+            ctx.fillRect(size * 0.302, size * 0.406, size * 0.083, size * 0.063);
+            
+            // Kart numarası çizgileri
+            ctx.fillStyle = 'rgba(26, 26, 26, 0.6)';
+            ctx.fillRect(size * 0.302, size * 0.5, size * 0.167, size * 0.01);
+            ctx.fillRect(size * 0.49, size * 0.5, size * 0.167, size * 0.01);
+            
+            // CVV alanı
+            ctx.fillRect(size * 0.302, size * 0.542, size * 0.104, size * 0.01);
+            
+            // Para simgesi arka plan
+            ctx.fillStyle = 'rgba(26, 26, 26, 0.2)';
+            ctx.beginPath();
+            ctx.arc(size * 0.625, size * 0.458, size * 0.063, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Para simgesi
+            ctx.fillStyle = '#1a1a1a';
+            ctx.font = `bold ${size * 0.083}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('₺', size * 0.625, size * 0.458);
+            
+            // İkinci kart (derinlik efekti)
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
+            ctx.lineWidth = scale;
+            ctx.strokeRect(size * 0.292, size * 0.396, size * 0.46, size * 0.29);
+            
+            // Takip ikonu
+            ctx.fillStyle = '#00ff88';
+            ctx.beginPath();
+            ctx.arc(size * 0.813, size * 0.813, size * 0.104, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Checkmark
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = scale * 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(size * 0.76, size * 0.813);
+            ctx.lineTo(size * 0.786, size * 0.839);
+            ctx.lineTo(size * 0.865, size * 0.76);
+            ctx.stroke();
+        }
+        
+        function downloadIcon(size) {
+            createIcon(size);
+            const canvas = document.getElementById(`canvas${size}`);
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Sayfa yüklendiğinde ikonları oluştur
+        window.onload = function() {
+            createIcon(192);
+            createIcon(512);
+        };
+    </script>
+</body>
+</html>
