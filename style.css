@@ -37,27 +37,20 @@ body.light-mode {
 }
 
 html {
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
-    -webkit-overflow-scrolling: touch;
     height: 100%;
-    position: fixed;
-    width: 100%;
+    overflow: hidden;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-color);
     color: var(--text-primary);
-    overflow: hidden;
     transition: background 0.3s ease, color 0.3s ease;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
     height: 100%;
-    position: fixed;
-    width: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
 }
