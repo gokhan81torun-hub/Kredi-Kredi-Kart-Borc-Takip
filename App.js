@@ -513,8 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme(savedTema);
     }
     
-    // Authentication kontrolü
-    checkAuthenticationState();
+    // GEÇİCİ: Onboarding'i atla, direkt ana uygulamayı göster
+    skipOnboardingAndShowApp();
     
     // Tarih inputlarını bugünün tarihiyle başlat
     initializeDateInputs();
@@ -525,6 +525,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Privacy mode yükle
     loadPrivacyMode();
 });
+
+// GEÇİCİ: Onboarding'i atla
+function skipOnboardingAndShowApp() {
+    // Varsayılan kullanıcı bilgileri ayarla
+    if (!localStorage.getItem('userName')) {
+        localStorage.setItem('userName', 'Kullanıcı');
+        localStorage.setItem('userPin', '1234');
+        localStorage.setItem('isSetupDone', 'true');
+    }
+    
+    // Tüm ekranları gizle
+    document.getElementById('onboarding-screen').style.display = 'none';
+    document.getElementById('pin-lock-screen').style.display = 'none';
+    
+    // Ana uygulamayı göster
+    document.getElementById('app').style.display = 'block';
+    
+    isAuthenticated = true;
+    
+    // Kullanıcı adını güncelle
+    const userName = localStorage.getItem('userName');
+    updateUserName(userName);
+    renderKartListesi();
+    initializePrivacyMode();
+}
 
 // Tarih inputlarını başlat
 function initializeDateInputs() {
