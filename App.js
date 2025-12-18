@@ -529,39 +529,64 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPrivacyMode();
 });
 
-// Pull-to-refresh'i engelle
+// Pull-to-refresh'i engelle - EN GÜÇLÜ YÖNTEM
 function disablePullToRefresh() {
     let startY = 0;
-    let isScrolling = false;
+    let startScrollTop = 0;
     
     // Touch başlangıcını yakala
     document.addEventListener('touchstart', function(e) {
         startY = e.touches[0].clientY;
-        isScrolling = false;
+        startScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     }, { passive: false });
     
     // Touch hareketi sırasında kontrol et
     document.addEventListener('touchmove', function(e) {
         const currentY = e.touches[0].clientY;
-        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
         
-        // Eğer sayfa en tepedeyse ve aşağı çekiliyorsa engelle
-        if (scrollTop === 0 && currentY > startY) {
+        // Eğer sayfa en tepedeyse ve aşağı çekiliyorsa MUTLAKA engelle
+        if (currentScrollTop <= 0 && currentY > startY) {
             e.preventDefault();
+            e.stopPropagation();
             return false;
         }
         
-        isScrolling = true;
+        // Negatif scroll'u engelle
+        if (currentScrollTop < 0) {
+            window.scrollTo(0, 0);
+            e.preventDefault();
+            return false;
+        }
     }, { passive: false });
     
-    // Overscroll olaylarını engelle
-    document.addEventListener('overscroll', function(e) {
-        e.preventDefault();
+    // Scroll olayını kontrol et
+    document.addEventListener('scroll', function(e) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        if (scrollTop < 0) {
+            window.scrollTo(0, 0);
+            e.preventDefault();
+            return false;
+        }
     }, { passive: false });
     
-    // Refresh olayını engelle
+    // Window'un scroll'unu kontrol et
+    window.addEventListener('scroll', function(e) {
+        if (window.pageYOffset < 0) {
+            window.scrollTo(0, 0);
+        }
+    }, { passive: false });
+    
+    // Tüm refresh olaylarını engelle
     window.addEventListener('beforeunload', function(e) {
-        if (!isScrolling) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Sayfa yenileme tuş kombinasyonlarını engelle
+    document.addEventListener('keydown', function(e) {
+        // Cmd+R, Ctrl+R, F5
+        if ((e.metaKey && e.key === 'r') || (e.ctrlKey && e.key === 'r') || e.key === 'F5') {
             e.preventDefault();
             return false;
         }

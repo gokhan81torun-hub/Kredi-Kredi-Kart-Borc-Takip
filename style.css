@@ -39,6 +39,10 @@ body.light-mode {
 html {
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    -webkit-overscroll-behavior: none;
+    -webkit-overscroll-behavior-y: none;
 }
 
 body {
@@ -48,11 +52,23 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
     height: 100%;
     overflow-y: auto;
-    overscroll-behavior-y: none;
+    overscroll-behavior: none !important;
+    overscroll-behavior-y: none !important;
+    -webkit-overscroll-behavior: none !important;
+    -webkit-overscroll-behavior-y: none !important;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    position: relative;
+}
+
+/* Tüm elementlerde overscroll'u engelle */
+* {
+    overscroll-behavior: none !important;
+    overscroll-behavior-y: none !important;
+    -webkit-overscroll-behavior: none !important;
+    -webkit-overscroll-behavior-y: none !important;
 }
 
 /* Onboarding Screen */
