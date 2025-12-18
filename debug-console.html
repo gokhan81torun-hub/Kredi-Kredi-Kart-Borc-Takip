@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Console</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a2f1f;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .console-output {
+            background: #1a4d3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #2a5d4a;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        .log-info {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+        }
+        
+        .log-error {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+        }
+        
+        .log-warn {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ff9800;
+        }
+        
+        .test-button {
+            background: #00ff88;
+            color: #0a2f1f;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .clear-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Console</h1>
+    <p>Bu sayfa JavaScript hatalarını ve console loglarını gösterir</p>
+    
+    <button class="test-button" onclick="testBasicFunction()">Test Basic Function</button>
+    <button class="test-button" onclick="testAppJsFunction()">Test App.js Function</button>
+    <button class="test-button clear-btn" onclick="clearConsole()">Clear Console</button>
+    
+    <h3>Console Output:</h3>
+    <div class="console-output" id="consoleOutput">
+        <div class="log-entry log-info">Console başlatıldı...</div>
+    </div>
+    
+    <script>
+        // Console override to capture logs
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        function addToConsole(message, type = 'info') {
+            const output = document.getElementById('consoleOutput');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Override console methods
+        console.log = function(...args) {
+            originalConsole.log(...args);
+            addToConsole(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error(...args);
+            addToConsole('ERROR: ' + args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn(...args);
+            addToConsole('WARNING: ' + args.join(' '), 'warn');
+        };
+        
+        // Catch unhandled errors
+        window.addEventListener('error', function(e) {
+            addToConsole(`UNCAUGHT ERROR: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        // Test functions
+        function testBasicFunction() {
+            console.log('✅ Basic function test - JavaScript is working');
+            addToConsole('Basic function test completed', 'info');
+        }
+        
+        function testAppJsFunction() {
+            try {
+                // Try to call a function from App.js
+                if (typeof testButtonClick === 'function') {
+                    console.log('✅ testButtonClick function found');
+                    testButtonClick('Debug Test');
+                } else {
+                    console.error('❌ testButtonClick function not found');
+                }
+                
+                if (typeof showScreen === 'function') {
+                    console.log('✅ showScreen function found');
+                } else {
+                    console.error('❌ showScreen function not found');
+                }
+            } catch (error) {
+                console.error('Error testing App.js functions:', error);
+            }
+        }
+        
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div class="log-entry log-info">Console cleared...</div>';
+        }
+        
+        // Initial test
+        console.log('🚀 Debug console loaded');
+        
+        // Test if App.js is loaded
+        setTimeout(() => {
+            if (typeof testButtonClick === 'function') {
+                console.log('✅ App.js functions are available');
+            } else {
+                console.error('❌ App.js functions not loaded');
+            }
+        }, 1000);
+    </script>
+    
+    <!-- Load App.js to test -->
+    <script src="App.js?v=20241218-8"></script>
+</body>
+</html>

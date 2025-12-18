@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basit Buton Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a2f1f;
+            color: white;
+            padding: 20px;
+        }
+        
+        .test-button {
+            background: #00ff88;
+            color: #0a2f1f;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            display: block;
+            width: 200px;
+        }
+        
+        .test-button:hover {
+            background: #00cc6a;
+        }
+        
+        .test-button:active {
+            background: #009955;
+        }
+        
+        .result {
+            background: #1a4d3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+        
+        .success {
+            color: #00ff88;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Basit Buton Test</h1>
+    <p>Bu sayfa en basit buton testini yapar</p>
+    
+    <button class="test-button" onclick="testButton1()">Test Buton 1</button>
+    <button class="test-button" onclick="testButton2()">Test Buton 2</button>
+    <button class="test-button" onclick="testButton3()">Test Buton 3</button>
+    
+    <div class="result" id="result">Butonlara tıklayın...</div>
+    
+    <script>
+        let clickCount = 0;
+        
+        function testButton1() {
+            clickCount++;
+            document.getElementById('result').innerHTML = `<span class="success">✅ Buton 1 çalışıyor! (${clickCount}. tık)</span>`;
+            console.log('Buton 1 tıklandı');
+        }
+        
+        function testButton2() {
+            clickCount++;
+            document.getElementById('result').innerHTML = `<span class="success">✅ Buton 2 çalışıyor! (${clickCount}. tık)</span>`;
+            console.log('Buton 2 tıklandı');
+        }
+        
+        function testButton3() {
+            clickCount++;
+            document.getElementById('result').innerHTML = `<span class="success">✅ Buton 3 çalışıyor! (${clickCount}. tık)</span>`;
+            console.log('Buton 3 tıklandı');
+        }
+        
+        console.log('Basit test sayfası yüklendi');
+    </script>
+</body>
+</html>

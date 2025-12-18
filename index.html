@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kredi Kartı Takip</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20241218-7">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00ff88">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,7 +20,7 @@
     <meta name="theme-color" content="#0a2f1f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content, shrink-to-fit=no">
     
-    <!-- PULL-TO-REFRESH ENGELLEMESİ İÇİN EKSTRA META TAGLAR -->
+    <!-- EK MOBİL TARAYICI KONTROL META TAGLARI -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,32 +28,22 @@
     <meta name="HandheldFriendly" content="true">
     <meta name="MobileOptimized" content="width">
     <meta name="referrer" content="no-referrer">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- PULL-TO-REFRESH ENGELLEMESİ İÇİN CHROME MOBİL -->
+    <meta name="theme-color" content="#0a2f1f">
+    <meta name="msapplication-navbutton-color" content="#0a2f1f">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     
     <!-- INLINE CSS - PULL-TO-REFRESH ENGELLEMESİ -->
     <style>
-        /* ULTRA GÜÇLÜ PULL-TO-REFRESH ENGELLEMESİ */
+        /* MINIMAL CSS - SADECE TEMEL STILLER */
         html, body {
-            overscroll-behavior: none !important;
-            overscroll-behavior-y: none !important;
-            -webkit-overscroll-behavior: none !important;
-            -webkit-overscroll-behavior-y: none !important;
-            touch-action: pan-y !important;
-            -webkit-touch-callout: none !important;
-            -webkit-user-select: none !important;
-            user-select: none !important;
-            position: fixed !important;
             width: 100% !important;
             height: 100% !important;
             overflow: hidden !important;
-        }
-        
-        /* TÜM ELEMENTLER İÇİN */
-        * {
-            overscroll-behavior: none !important;
-            overscroll-behavior-y: none !important;
-            -webkit-overscroll-behavior: none !important;
-            -webkit-overscroll-behavior-y: none !important;
-            touch-action: pan-y !important;
         }
         
         /* APP CONTAINER */
@@ -68,9 +58,62 @@
         .content {
             overflow-y: auto !important;
             overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        /* BUTONLAR TAMAMEN SERBEST */
+        button, .btn, .fab, .nav-item, .chip, .payment-card, .numpad-btn,
+        .menu-btn, .back-btn, .notification-btn, .menu-dots, .save-btn,
+        .onboarding-btn, .calendar-reminder-btn, .pay-button {
+            cursor: pointer !important;
+            pointer-events: auto !important;
+        }
+        
+        /* APP CONTAINER */
+        #app {
+            height: 100vh !important;
+            height: 100dvh !important;
+            overflow: hidden !important;
+            position: relative !important;
+            -webkit-transform: translate3d(0,0,0) !important;
+        }
+        
+        /* CONTENT ALANLARI */
+        .content {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
             overscroll-behavior: none !important;
             -webkit-overflow-scrolling: touch !important;
             touch-action: pan-y !important;
+            -webkit-transform: translate3d(0,0,0) !important;
+        }
+        
+        /* MOBİL TARAYICILAR İÇİN EK KURALLAR */
+        @supports (-webkit-touch-callout: none) {
+            html {
+                position: fixed !important;
+                overflow: hidden !important;
+                height: 100% !important;
+                width: 100% !important;
+                -webkit-overflow-scrolling: auto !important;
+            }
+            
+            body {
+                position: fixed !important;
+                overflow: hidden !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+                width: 100% !important;
+                -webkit-overflow-scrolling: auto !important;
+            }
+        }
+        
+        /* CHROME MOBİL İÇİN */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            html, body {
+                overscroll-behavior-y: contain !important;
+                -webkit-overscroll-behavior-y: contain !important;
+            }
         }
     </style>
     
@@ -83,63 +126,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-    <!-- ULTRA GÜÇLÜ PULL-TO-REFRESH ENGELLEMESİ -->
+    <!-- PULL-TO-REFRESH ENGELLEMESİ KALDIRILDI -->
     <script>
-        console.log('🛡️ PULL-TO-REFRESH ENGELLEMESİ BAŞLADI');
-        
-        // Hemen tüm touch eventlerini yakala
-        let startY = 0;
-        let isAtTop = false;
-        
-        // Touch başlangıcı
-        document.addEventListener('touchstart', function(e) {
-            startY = e.touches[0].clientY;
-            isAtTop = (window.pageYOffset || document.documentElement.scrollTop || 0) <= 0;
-            console.log('👆 Touch start - isAtTop:', isAtTop);
-        }, { passive: false, capture: true });
-        
-        // Touch hareketi
-        document.addEventListener('touchmove', function(e) {
-            const currentY = e.touches[0].clientY;
-            const deltaY = currentY - startY;
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-            
-            // Eğer tepedeyse ve aşağı çekiliyorsa MUTLAKA engelle
-            if (scrollTop <= 0 && deltaY > 0) {
-                console.log('🚫 PULL-TO-REFRESH ENGELLENDİ!');
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                return false;
-            }
-            
-            // Çok hızlı aşağı çekmeyi engelle
-            if (deltaY > 100 && scrollTop <= 5) {
-                console.log('🚫 HIZLI PULL ENGELLENDİ!');
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        }, { passive: false, capture: true });
-        
-        // Scroll eventini yakala
-        document.addEventListener('scroll', function(e) {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-            if (scrollTop < 0) {
-                console.log('🚫 NEGATİF SCROLL ENGELLENDİ!');
-                window.scrollTo(0, 0);
-                e.preventDefault();
-                return false;
-            }
-        }, { passive: false, capture: true });
-        
-        // Sayfa yenileme gestürlerini engelle
-        document.addEventListener('gesturestart', function(e) {
-            e.preventDefault();
-            return false;
-        }, { passive: false });
-        
-        console.log('✅ PULL-TO-REFRESH ENGELLEMESİ AKTİF');
+        console.log('✅ PULL-TO-REFRESH ENGELLEMESİ KALDIRILDI - BUTONLAR ÇALIŞABİLİR');
     </script>
     
     <!-- İlk Kurulum Ekranı -->
@@ -260,6 +249,14 @@
 
             <div class="content">
                 <h2 class="greeting">Merhaba, Kullanıcı!</h2>
+                
+                <!-- DEBUG TEST BUTONLARI -->
+                <div style="background: #ff6b6b; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                    <h3>🧪 DEBUG TEST BUTONLARI</h3>
+                    <button onclick="testButtonClick('Test 1')" style="background: #00ff88; color: #000; padding: 10px; margin: 5px; border: none; border-radius: 4px; cursor: pointer;">Test Buton 1</button>
+                    <button onclick="testButtonClick('Test 2')" style="background: #00ff88; color: #000; padding: 10px; margin: 5px; border: none; border-radius: 4px; cursor: pointer;">Test Buton 2</button>
+                    <button onclick="alert('Direkt alert çalışıyor!')" style="background: #ff9800; color: #000; padding: 10px; margin: 5px; border: none; border-radius: 4px; cursor: pointer;">Direkt Alert</button>
+                </div>
 
                 <div class="summary-card">
                     <div class="summary-header">
@@ -1107,6 +1104,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20241218-7"></script>
 </body>
 </html>
