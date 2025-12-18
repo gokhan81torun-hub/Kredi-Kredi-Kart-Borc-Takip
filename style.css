@@ -37,7 +37,12 @@ body.light-mode {
 }
 
 html {
+    overscroll-behavior: none;
     overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    height: 100%;
+    position: fixed;
+    width: 100%;
 }
 
 body {
@@ -46,8 +51,15 @@ body {
     color: var(--text-primary);
     overflow: hidden;
     transition: background 0.3s ease, color 0.3s ease;
+    overscroll-behavior: none;
     overscroll-behavior-y: none;
     touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 /* Onboarding Screen */

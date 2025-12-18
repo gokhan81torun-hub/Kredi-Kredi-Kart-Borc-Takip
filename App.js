@@ -503,6 +503,9 @@ function migrateOldDates() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Pull-to-refresh'i engelle
+    disablePullToRefresh();
+    
     // Veri temizleme: Eski tarihleri dönüştür
     migrateOldDates();
     
@@ -525,6 +528,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Privacy mode yükle
     loadPrivacyMode();
 });
+
+// Pull-to-refresh'i engelle
+function disablePullToRefresh() {
+    let startY = 0;
+    let isScrolling = false;
+    
+    // Touch başlangıcını yakala
+    document.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        isScrolling = false;
+    }, { passive: false });
+    
+    // Touch hareketi sırasında kontrol et
+    document.addEventListener('touchmove', function(e) {
+        const currentY = e.touches[0].clientY;
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        
+        // Eğer sayfa en tepedeyse ve aşağı çekiliyorsa engelle
+        if (scrollTop === 0 && currentY > startY) {
+            e.preventDefault();
+            return false;
+        }
+        
+        isScrolling = true;
+    }, { passive: false });
+    
+    // Overscroll olaylarını engelle
+    document.addEventListener('overscroll', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+    
+    // Refresh olayını engelle
+    window.addEventListener('beforeunload', function(e) {
+        if (!isScrolling) {
+            e.preventDefault();
+            return false;
+        }
+    });
+}
 
 // GEÇİCİ: Onboarding'i atla
 function skipOnboardingAndShowApp() {
