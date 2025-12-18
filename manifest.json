@@ -1,6 +1,6 @@
 {
-  "name": "Kredi Kartı Borç Takip",
-  "short_name": "KK Takip",
+  "name": "Finansal Takip",
+  "short_name": "Finansal Takip",
   "description": "Kredi kartı borçlarınızı takip edin",
   "start_url": "/",
   "display": "standalone",
