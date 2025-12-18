@@ -19,6 +19,61 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a2f1f">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content, shrink-to-fit=no">
+    
+    <!-- PULL-TO-REFRESH ENGELLEMESİ İÇİN EKSTRA META TAGLAR -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="width">
+    <meta name="referrer" content="no-referrer">
+    
+    <!-- INLINE CSS - PULL-TO-REFRESH ENGELLEMESİ -->
+    <style>
+        /* ULTRA GÜÇLÜ PULL-TO-REFRESH ENGELLEMESİ */
+        html, body {
+            overscroll-behavior: none !important;
+            overscroll-behavior-y: none !important;
+            -webkit-overscroll-behavior: none !important;
+            -webkit-overscroll-behavior-y: none !important;
+            touch-action: pan-y !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        /* TÜM ELEMENTLER İÇİN */
+        * {
+            overscroll-behavior: none !important;
+            overscroll-behavior-y: none !important;
+            -webkit-overscroll-behavior: none !important;
+            -webkit-overscroll-behavior-y: none !important;
+            touch-action: pan-y !important;
+        }
+        
+        /* APP CONTAINER */
+        #app {
+            height: 100vh !important;
+            height: 100dvh !important;
+            overflow: hidden !important;
+            position: relative !important;
+        }
+        
+        /* CONTENT ALANLARI */
+        .content {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            overscroll-behavior: none !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-y !important;
+        }
+    </style>
+    
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     
@@ -28,6 +83,65 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
+    <!-- ULTRA GÜÇLÜ PULL-TO-REFRESH ENGELLEMESİ -->
+    <script>
+        console.log('🛡️ PULL-TO-REFRESH ENGELLEMESİ BAŞLADI');
+        
+        // Hemen tüm touch eventlerini yakala
+        let startY = 0;
+        let isAtTop = false;
+        
+        // Touch başlangıcı
+        document.addEventListener('touchstart', function(e) {
+            startY = e.touches[0].clientY;
+            isAtTop = (window.pageYOffset || document.documentElement.scrollTop || 0) <= 0;
+            console.log('👆 Touch start - isAtTop:', isAtTop);
+        }, { passive: false, capture: true });
+        
+        // Touch hareketi
+        document.addEventListener('touchmove', function(e) {
+            const currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+            
+            // Eğer tepedeyse ve aşağı çekiliyorsa MUTLAKA engelle
+            if (scrollTop <= 0 && deltaY > 0) {
+                console.log('🚫 PULL-TO-REFRESH ENGELLENDİ!');
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
+            }
+            
+            // Çok hızlı aşağı çekmeyi engelle
+            if (deltaY > 100 && scrollTop <= 5) {
+                console.log('🚫 HIZLI PULL ENGELLENDİ!');
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, { passive: false, capture: true });
+        
+        // Scroll eventini yakala
+        document.addEventListener('scroll', function(e) {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+            if (scrollTop < 0) {
+                console.log('🚫 NEGATİF SCROLL ENGELLENDİ!');
+                window.scrollTo(0, 0);
+                e.preventDefault();
+                return false;
+            }
+        }, { passive: false, capture: true });
+        
+        // Sayfa yenileme gestürlerini engelle
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+            return false;
+        }, { passive: false });
+        
+        console.log('✅ PULL-TO-REFRESH ENGELLEMESİ AKTİF');
+    </script>
+    
     <!-- İlk Kurulum Ekranı -->
     <div id="onboarding-screen" class="onboarding-screen">
         <div class="onboarding-container">
@@ -95,6 +209,47 @@
 
     <!-- Ana Uygulama -->
     <div id="app" style="display: none;">
+    
+    <!-- ACIL BYPASS SCRIPT -->
+    <script>
+        console.log('🚀 ACIL BYPASS BAŞLADI');
+        
+        // Hemen localStorage ayarla
+        localStorage.setItem('userName', 'Kullanıcı');
+        localStorage.setItem('userPin', '1234');
+        localStorage.setItem('isSetupDone', 'true');
+        localStorage.setItem('setupDate', new Date().toISOString());
+        
+        // Sayfa yüklenir yüklenmez çalış
+        window.addEventListener('load', function() {
+            console.log('🔥 WINDOW LOAD - BYPASS ÇALIŞIYOR');
+            
+            setTimeout(function() {
+                const onboarding = document.getElementById('onboarding-screen');
+                const pinLock = document.getElementById('pin-lock-screen');
+                const app = document.getElementById('app');
+                
+                if (onboarding) {
+                    onboarding.style.display = 'none';
+                    console.log('✅ Onboarding gizlendi');
+                }
+                
+                if (pinLock) {
+                    pinLock.style.display = 'none';
+                    console.log('✅ PIN lock gizlendi');
+                }
+                
+                if (app) {
+                    app.style.display = 'block';
+                    console.log('✅ App gösterildi');
+                } else {
+                    console.error('❌ App bulunamadı');
+                }
+                
+                console.log('🎉 BYPASS TAMAMLANDI!');
+            }, 50);
+        });
+    </script>
         <!-- Ana Sayfa -->
         <div id="anaSayfa" class="screen active">
             <div class="header">

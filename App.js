@@ -522,9 +522,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // GEÇİCİ: Onboarding'i atla, direkt ana uygulamayı göster
-    setTimeout(() => {
-        skipOnboardingAndShowApp();
-    }, 100);
+    // HEMEN bypass yap - setTimeout kullanma
+    console.log('Onboarding bypass başlatılıyor...');
+    
+    // localStorage'ı zorla ayarla
+    localStorage.setItem('userName', 'Kullanıcı');
+    localStorage.setItem('userPin', '1234');
+    localStorage.setItem('isSetupDone', 'true');
+    localStorage.setItem('setupDate', new Date().toISOString());
+    
+    // Ekranları hemen değiştir
+    const onboardingScreen = document.getElementById('onboarding-screen');
+    const pinLockScreen = document.getElementById('pin-lock-screen');
+    const appScreen = document.getElementById('app');
+    
+    if (onboardingScreen) {
+        onboardingScreen.style.display = 'none';
+        console.log('✅ Onboarding screen gizlendi');
+    }
+    
+    if (pinLockScreen) {
+        pinLockScreen.style.display = 'none';
+        console.log('✅ PIN lock screen gizlendi');
+    }
+    
+    if (appScreen) {
+        appScreen.style.display = 'block';
+        console.log('✅ App screen gösterildi');
+    } else {
+        console.error('❌ App screen bulunamadı!');
+    }
+    
+    // Global değişkeni ayarla
+    isAuthenticated = true;
+    
+    console.log('✅ Onboarding bypass tamamlandı!');
     
     // Tarih inputlarını bugünün tarihiyle başlat
     initializeDateInputs();
@@ -769,64 +801,7 @@ function preventAllRefresh() {
     console.log('Ekstra güvenlik katmanı aktif');
 }
 
-// GEÇİCİ: Onboarding'i atla
-function skipOnboardingAndShowApp() {
-    console.log('skipOnboardingAndShowApp çağrıldı');
-    
-    // ZORLA varsayılan kullanıcı bilgileri ayarla (her seferinde)
-    localStorage.setItem('userName', 'Kullanıcı');
-    localStorage.setItem('userPin', '1234');
-    localStorage.setItem('isSetupDone', 'true');
-    localStorage.setItem('setupDate', new Date().toISOString());
-    
-    console.log('localStorage ayarlandı:', {
-        userName: localStorage.getItem('userName'),
-        isSetupDone: localStorage.getItem('isSetupDone')
-    });
-    
-    // Tüm ekranları gizle
-    const onboardingScreen = document.getElementById('onboarding-screen');
-    const pinLockScreen = document.getElementById('pin-lock-screen');
-    const appScreen = document.getElementById('app');
-    
-    if (onboardingScreen) {
-        onboardingScreen.style.display = 'none';
-        console.log('Onboarding screen gizlendi');
-    }
-    
-    if (pinLockScreen) {
-        pinLockScreen.style.display = 'none';
-        console.log('PIN lock screen gizlendi');
-    }
-    
-    if (appScreen) {
-        appScreen.style.display = 'block';
-        console.log('App screen gösterildi');
-    }
-    
-    isAuthenticated = true;
-    
-    // Kullanıcı adını güncelle
-    const userName = localStorage.getItem('userName');
-    try {
-        if (typeof updateUserName === 'function') {
-            updateUserName(userName);
-            console.log('updateUserName çağrıldı');
-        }
-        if (typeof renderKartListesi === 'function') {
-            renderKartListesi();
-            console.log('renderKartListesi çağrıldı');
-        }
-        if (typeof initializePrivacyMode === 'function') {
-            initializePrivacyMode();
-            console.log('initializePrivacyMode çağrıldı');
-        }
-    } catch (error) {
-        console.error('Fonksiyon çağırma hatası:', error);
-    }
-    
-    console.log('Ana uygulama başarıyla gösterildi');
-}
+// Eski skipOnboardingAndShowApp fonksiyonu kaldırıldı - artık DOMContentLoaded içinde direkt çalışıyor
 }
 
 // Tarih inputlarını başlat
