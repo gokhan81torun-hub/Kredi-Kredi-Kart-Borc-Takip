@@ -528,12 +528,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // GEÇİCİ: Onboarding'i atla
 function skipOnboardingAndShowApp() {
-    // Varsayılan kullanıcı bilgileri ayarla
-    if (!localStorage.getItem('userName')) {
-        localStorage.setItem('userName', 'Kullanıcı');
-        localStorage.setItem('userPin', '1234');
-        localStorage.setItem('isSetupDone', 'true');
-    }
+    // ZORLA varsayılan kullanıcı bilgileri ayarla (her seferinde)
+    localStorage.setItem('userName', 'Kullanıcı');
+    localStorage.setItem('userPin', '1234');
+    localStorage.setItem('isSetupDone', 'true');
+    localStorage.setItem('setupDate', new Date().toISOString());
+    
+    console.log('localStorage ayarlandı:', {
+        userName: localStorage.getItem('userName'),
+        isSetupDone: localStorage.getItem('isSetupDone')
+    });
     
     // Tüm ekranları gizle
     document.getElementById('onboarding-screen').style.display = 'none';
@@ -546,9 +550,17 @@ function skipOnboardingAndShowApp() {
     
     // Kullanıcı adını güncelle
     const userName = localStorage.getItem('userName');
-    updateUserName(userName);
-    renderKartListesi();
-    initializePrivacyMode();
+    if (typeof updateUserName === 'function') {
+        updateUserName(userName);
+    }
+    if (typeof renderKartListesi === 'function') {
+        renderKartListesi();
+    }
+    if (typeof initializePrivacyMode === 'function') {
+        initializePrivacyMode();
+    }
+    
+    console.log('Ana uygulama gösterildi');
 }
 
 // Tarih inputlarını başlat
