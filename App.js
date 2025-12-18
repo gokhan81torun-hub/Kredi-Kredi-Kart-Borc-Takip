@@ -271,9 +271,10 @@ function checkAuthenticationState() {
         showOnboardingScreen();
         return false;
     } else {
-        // Setup yapılmış - PIN kilit ekranını göster
-        showPinLockScreen();
-        return false;
+        // Setup yapılmış - direkt ana uygulamayı göster (geçici)
+        const userName = localStorage.getItem('userName') || 'Kullanıcı';
+        showApp(userName);
+        return true;
     }
 }
 
