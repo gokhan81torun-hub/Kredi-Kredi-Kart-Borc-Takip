@@ -503,6 +503,8 @@ function migrateOldDates() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM yüklendi, başlatılıyor...');
+    
     // Pull-to-refresh'i engelle - EN ÖNCELİKLİ
     disablePullToRefresh();
     
@@ -520,7 +522,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // GEÇİCİ: Onboarding'i atla, direkt ana uygulamayı göster
-    skipOnboardingAndShowApp();
+    setTimeout(() => {
+        skipOnboardingAndShowApp();
+    }, 100);
     
     // Tarih inputlarını bugünün tarihiyle başlat
     initializeDateInputs();
@@ -530,6 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Privacy mode yükle
     loadPrivacyMode();
+    
+    console.log('Tüm başlatma işlemleri tamamlandı');
 });
 
 // Pull-to-refresh'i engelle - EN GÜÇLÜ YÖNTEM
@@ -765,6 +771,8 @@ function preventAllRefresh() {
 
 // GEÇİCİ: Onboarding'i atla
 function skipOnboardingAndShowApp() {
+    console.log('skipOnboardingAndShowApp çağrıldı');
+    
     // ZORLA varsayılan kullanıcı bilgileri ayarla (her seferinde)
     localStorage.setItem('userName', 'Kullanıcı');
     localStorage.setItem('userPin', '1234');
@@ -777,27 +785,48 @@ function skipOnboardingAndShowApp() {
     });
     
     // Tüm ekranları gizle
-    document.getElementById('onboarding-screen').style.display = 'none';
-    document.getElementById('pin-lock-screen').style.display = 'none';
+    const onboardingScreen = document.getElementById('onboarding-screen');
+    const pinLockScreen = document.getElementById('pin-lock-screen');
+    const appScreen = document.getElementById('app');
     
-    // Ana uygulamayı göster
-    document.getElementById('app').style.display = 'block';
+    if (onboardingScreen) {
+        onboardingScreen.style.display = 'none';
+        console.log('Onboarding screen gizlendi');
+    }
+    
+    if (pinLockScreen) {
+        pinLockScreen.style.display = 'none';
+        console.log('PIN lock screen gizlendi');
+    }
+    
+    if (appScreen) {
+        appScreen.style.display = 'block';
+        console.log('App screen gösterildi');
+    }
     
     isAuthenticated = true;
     
     // Kullanıcı adını güncelle
     const userName = localStorage.getItem('userName');
-    if (typeof updateUserName === 'function') {
-        updateUserName(userName);
-    }
-    if (typeof renderKartListesi === 'function') {
-        renderKartListesi();
-    }
-    if (typeof initializePrivacyMode === 'function') {
-        initializePrivacyMode();
+    try {
+        if (typeof updateUserName === 'function') {
+            updateUserName(userName);
+            console.log('updateUserName çağrıldı');
+        }
+        if (typeof renderKartListesi === 'function') {
+            renderKartListesi();
+            console.log('renderKartListesi çağrıldı');
+        }
+        if (typeof initializePrivacyMode === 'function') {
+            initializePrivacyMode();
+            console.log('initializePrivacyMode çağrıldı');
+        }
+    } catch (error) {
+        console.error('Fonksiyon çağırma hatası:', error);
     }
     
-    console.log('Ana uygulama gösterildi');
+    console.log('Ana uygulama başarıyla gösterildi');
+}
 }
 
 // Tarih inputlarını başlat
