@@ -307,12 +307,12 @@ function handleSetup(event) {
     
     // Validasyon
     if (name.length < 2) {
-        showToast('Lütfen en az 2 karakter uzunluğunda bir isim girin');
+        alert('Lütfen en az 2 karakter uzunluğunda bir isim girin');
         return;
     }
     
     if (!/^\d{4}$/.test(pin)) {
-        showToast('PIN 4 haneli rakam olmalıdır');
+        alert('PIN 4 haneli rakam olmalıdır');
         return;
     }
     
@@ -322,28 +322,43 @@ function handleSetup(event) {
     localStorage.setItem('isSetupDone', 'true');
     localStorage.setItem('setupDate', new Date().toISOString());
     
-    showToast('Kurulum tamamlandı! Hoş geldiniz.');
+    console.log('Kurulum tamamlandı, showApp çağrılıyor...');
     
     // Ana uygulamayı göster
-    setTimeout(() => {
-        showApp(name);
-    }, 1000);
+    showApp(name);
 }
 
 // Uygulamayı göster
 function showApp(userName) {
-    document.getElementById('onboarding-screen').style.display = 'none';
-    document.getElementById('pin-lock-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    console.log('showApp çağrıldı, userName:', userName);
     
-    isAuthenticated = true;
-    
-    // Kullanıcı adını güncelle
-    updateUserName(userName);
-    renderKartListesi();
-    
-    // Privacy mode durumunu kontrol et
-    initializePrivacyMode();
+    try {
+        document.getElementById('onboarding-screen').style.display = 'none';
+        document.getElementById('pin-lock-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        
+        isAuthenticated = true;
+        
+        // Kullanıcı adını güncelle
+        if (typeof updateUserName === 'function') {
+            updateUserName(userName);
+        }
+        
+        // Kart listesini render et
+        if (typeof renderKartListesi === 'function') {
+            renderKartListesi();
+        }
+        
+        // Privacy mode durumunu kontrol et
+        if (typeof initializePrivacyMode === 'function') {
+            initializePrivacyMode();
+        }
+        
+        console.log('Ana uygulama başarıyla gösterildi');
+    } catch (error) {
+        console.error('showApp hatası:', error);
+        alert('Uygulama başlatılırken hata oluştu: ' + error.message);
+    }
 }
 
 // Kullanıcı adını güncelle
